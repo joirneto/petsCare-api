@@ -4,6 +4,7 @@
   "description": "Api de consultas de Pets",
   "main": "index.js",
   "scripts": {
+    "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -20,5 +21,11 @@
   "bugs": {
     "url": "https://github.com/joirneto/petsCare-api/issues"
   },
-  "homepage": "https://github.com/joirneto/petsCare-api#readme"
+  "homepage": "https://github.com/joirneto/petsCare-api#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.12"
+  }
 }
