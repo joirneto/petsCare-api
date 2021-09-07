@@ -1,15 +1,7 @@
-const express = require('express');
-const app = express();
+const customExpress = require('./config/customExpress');
+const PORT = 3000;
 
-const PORT = 3000
-
-app.get('/', (req, res) =>{
-  res.send('Hello World');
-});
-
-app.get('/atendimentos', (req, res) =>{
-  res.send('Rota de atendimentos');
-});
+const app = customExpress()
 
 app.listen(PORT, () =>{
   console.log(`Server listenig at PORT ${PORT}` )
