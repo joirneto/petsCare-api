@@ -13,7 +13,7 @@ class Pet {
       else{
         const novoPet = {nome: pet.nome, imagem: newPathImage}
 
-      conexao.query(query, novoPet, erro =>{
+        conexao.query(query, novoPet, erro =>{
         if(erro){
           res.status(400).json(erro)
         }else{
