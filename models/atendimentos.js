@@ -1,69 +1,73 @@
 const conexao = require('../infraestrutura/database/conexao')
 const moment = require('moment');
 const axios = require('axios');
+const repositorio = require('../repositorios/atendimento')
 
 class Atendimento {
-  adiciona(atendimento, res) {
-    const dataCriacao = new Date();
-    const data = moment(atendimento.data, 'DD/MM/YYYY').format('YYYY-MM-DD HH:MM:SS');
+  constructor() {
+    this.dataEhValida = ({data, dataCriacao}) =>moment(data).isSameOrAfter(dataCriacao);
+    this.clienteEhValido = (tamanho) => tamanho >= 5;
 
-    const dataEhValida = moment(data).isSameOrAfter(dataCriacao);
-    const clienteEhValido = atendimento.cliente.length >= 5;
-    const validacoes = [
+    this.valida = (parametros) => this.validacoes.filter(campos =>{
+      const {nome} = campos
+      const parametro = parametros[nome]
+
+      return !campos.valido(parametro)
+    })
+
+    this.validacoes = [
       {
         nome: 'data',
-        valido: dataEhValida,
+        valido: this.dataEhValida,
         mensagem: "Data de agendamento deve ser maior que a data atual."
       },
       {
         nome: 'cliente',
-        valido: clienteEhValido,
+        valido: this.clienteEhValido,
         mensagem: "Cliente deve ter pelo menos 5 caracteres."
       },
     ]
 
-    const erros = validacoes.filter(value => !value.valido);
+  }
+  adiciona(atendimento) {
+    const dataCriacao = new Date();
+    const data = moment(atendimento.data, 'DD/MM/YYYY').format('YYYY-MM-DD HH:MM:SS');
+
+    const parametros = {
+      data: {data, dataCriacao},
+      cliente: {tamanho: atendimento.cliente.length}
+    }
+    const erros = this.valida(parametros);
     const existemErros = erros.length;
 
     if (existemErros) {
-      res.status(400).json(erros)
+      return new Promise((resolve, reject) => reject(erros))
+
     } else {
       const atendimentoDatado = { ...atendimento, dataCriacao, data };
-      const sql = 'INSERT INTO Atendimentos SET ?';
 
-      conexao.query(sql, atendimentoDatado, (erro, resultado) => {
-        if (erro) {
-          res.status(400).json(erro);
-        } else {
-          res.status(201).json(atendimentoDatado)
-        }
+      return repositorio.adiciona(atendimentoDatado).then(resultados => {
+        const id = resultados.insertId
+        return ({ ...atendimentoDatado, id })
       })
     }
   }
 
-  lista(res){
-    const sql = 'SELECT * FROM Atendimentos'
-
-    conexao.query(sql, (erro, resultados) =>{
-      if(erro){
-        res.status(400).json(erro);
-      }else{
-        res.status(200).json(resultados);
-      }
-    })
+  lista() {
+  return repositorio.lista();    
   }
 
-  buscaPorId(id, res){
+  buscaPorId(id, res) {
     const sql = `SELECT * FROM Atendimentos WHERE id = ${id}`;
-   
 
-    conexao.query(sql, async (erro, resultados) =>{
+
+    conexao.query(sql, async (erro, resultados) => {
       const atendimento = resultados[0];
       const cpf = atendimento.cliente;
-      if(erro){
+      if (erro) {
         res.status(400).json(erro)
-      }else{
-        const {data} = await axios.get(`http://localhost:8082/${cpf}`);
+      } else {
+        const { data } = await axios.get(`http://localhost:8082/${cpf}`);
         atendimento.cliente = data;
 
         res.status(200).json(atendimento)
@@ -71,30 +75,30 @@ class Atendimento {
     })
   }
 
-  alteraAtendimento(id, campos, res){
+  alteraAtendimento(id, campos, res) {
     const sql = 'UPDATE Atendimentos SET ? WHERE id =?'
-    if(campos.data){
+    if (campos.data) {
       campos.data = moment(campos.data, 'DD/MM/YYYY').format('YYYY-MM-DD HH:MM:SS');
     }
 
 
-    conexao.query(sql,[campos, id], (erro, resultados)=>{
-      if(erro){
+    conexao.query(sql, [campos, id], (erro, resultados) => {
+      if (erro) {
         res.status(400).json(erro)
-      }else{
-        res.status(202).json({...campos, id})
+      } else {
+        res.status(202).json({ ...campos, id })
       }
     })
   }
 
-  deletaAtendimento(id, res){
+  deletaAtendimento(id, res) {
     const sql = 'DELETE FROM Atendimentos WHERE id=?'
 
-    conexao.query(sql, id, (erro, resultados)=>{
-      if(erro){
+    conexao.query(sql, id, (erro, resultados) => {
+      if (erro) {
         res.status(400).json(erro)
-      }else{
-        res.status(200).json({id})
+      } else {
+        res.status(200).json({ id })
       }
     })
   }
